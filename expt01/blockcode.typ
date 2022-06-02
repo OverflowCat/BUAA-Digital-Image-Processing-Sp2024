@@ -20,12 +20,12 @@
       thickness: 1pt,
       radius: 3pt,
     ),
-   title: [
-     #set text(font: "Roboto Slab", size: .85em)
-     #filename
-   ],
+    title: if filename == "" { "" } else [
+      #set text(font: "Roboto Slab", size: .85em)
+      #filename
+    ],
   )[
-     #show raw: set text(font: "IBM Plex Mono", size: 1.01em)     
+     #show raw: set text(font: ("IBM Plex Mono", "JetBrains Mono", "Noto Sans Mono CJK SC"), size: 1.01em)
      #sourcecode(frame: none)[#body]
   ]
 }
