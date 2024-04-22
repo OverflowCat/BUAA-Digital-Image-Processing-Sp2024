@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Experiment 01</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+    <h1></h1>
+    <p>
+      请选择图片
+      <input type="file" id="file" accept="image/*" />
+    </p>
+    <p>
+      直方图统计
+      <label>x <input type="number" id="x" value="0" /></label>
+      <label>y <input type="number" id="y" value="0" /></label>
+      <label>宽度 <input type="number" id="width" value="100" /></label>
+      <button
+        onclick="document.getElementById('width').value = canvas.width - document.getElementById('x').value;"
+      >
+        设置为图片宽度
+      </button>
+      <label>高度 <input type="number" id="height" value="100" /></label>
+      <button
+        onclick="document.getElementById('height').value = canvas.height - document.getElementById('y').value;"
+      >
+        设置为图片高度
+      </button>
+      <button onclick="drawHist()">统计</button>
+    </p>
+    <canvas id="img"></canvas>
+  </body>
+  <script>
+    const canvas = document.getElementById("img");
+    const ctx = canvas.getContext("2d");
+
+    const file = document.getElementById("file");
+    file.addEventListener("change", drawImg);
+
+    function drawImg() {
+      const img = new Image();
+      img.src = URL.createObjectURL(file.files[0]);
+      img.onload = function () {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+      };
+    }
+    function drawBox(x, y, width, height) {
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, width, height);
+    }
+
+    function getBox(x, y, width, height) {
+      return ctx.getImageData(x, y, width, height);
+    }
+
+    function drawHist() {
+      const x = document.getElementById("x").value,
+        y = document.getElementById("y").value,
+        width = document.getElementById("width").value,
+        height = document.getElementById("height").value;
+      histogram(getBox(x, y, width, height));
+      drawBox(x, y, width, height);
+    }
+
+    function histogram(imgData) {
+      const hist = new Array(256).fill(0);
+      for (let i = 0; i < imgData.data.length; i += 4) {
+        // 灰度图像 r == g == b，alpha == 255，取 r 通道
+        const gray = imgData.data[i];
+        hist[gray]++;
+      }
+      console.log({ hist });
+    }
+
+    // 1）参照教材给出的基于局部直方图统计矩（均值及方差）的亮度及对比度增强方案，编写实现图像全局直方图、局部直方图统计程序、基于直方图的全局均值及方差计算程序、局部方差及方差计算程序、选择性局部图像增强程序
+  </script>
+</html>
