@@ -81,10 +81,12 @@
 </script>
 
 <div class="app">
-  <div>
+  <div id="normalize">
     <label>
       <input type="checkbox" bind:checked={normalize} />
-      归一化（<Katex>{`p_r(k) = \\dfrac{n_k}{M N}`}</Katex>）
+      归一化（<Katex>{
+        normalize ? `p_r(k) = \\dfrac{n_k}{M N}` : `p_r'(k) = n_k`
+      }</Katex>）
     </label>
   </div>
   <Chart {options} />
@@ -94,5 +96,9 @@
   .app {
     width: 890px;
     height: 500px;
+  }
+
+  #normalize {
+    min-height: 55px;
   }
 </style>

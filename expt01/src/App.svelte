@@ -1,8 +1,13 @@
-<script>
+<script lang="ts">
+  import { throttle } from "@martinstark/throttle-ts";
+  import { calculateMean, calculateSigma2, localHistogram } from "./histogram";
   import Katex from "svelte-katex";
   import Hist from "./Hist.svelte";
-  let files;
-  let canvas;
+  import { toRGBA, toSingleChannel } from "./imageUtils";
+
+  let files: FileList;
+  let canvas: HTMLCanvasElement;
+  let canvasEnhanced: HTMLCanvasElement;
   let x = 0;
   let y = 0;
   let m = 0;
@@ -10,15 +15,30 @@
   let width = 100;
   let height = 100;
   let histData = [];
+  let neighborhoodSize = 3;
+  /** 教材中推荐的参数 */
+  let E = 4.0,
+    k0 = 0.4,
+    k1 = 0.02,
+    k2 = 0.4;
+
   $: ctx = canvas?.getContext("2d");
   $: disabled = !files || files.length === 0;
-  const throttledShowHist = throttle(showHist, 300);
   $: x,
     y,
     width,
     height,
     throttledDrawBox(x, y, width, height),
     histData && histData.length > 0 && throttledShowHist();
+  $: neighborhoodSize,
+    E,
+    k0,
+    k1,
+    k2,
+    canvasEnhanced?.width &&
+      neighborhoodSize % 2 === 1 &&
+      throttledEnhanceImage(getSingleChannelData(), neighborhoodSize);
+
   async function onFileChange() {
     await drawImg();
     x = 0;
@@ -26,33 +46,19 @@
     width = canvas.width / 2;
     height = canvas.height / 2;
   }
-  function histogram(imgData) {
+  function histogram(imgData: SingleChannelImageData): number[] {
     const hist = new Array(256).fill(0);
-    for (let i = 0; i < imgData.data.length; i += 4) {
-      // 灰度图像 r == g == b，alpha == 255，取 r 通道
+    for (let i = 0; i < imgData.data.length; i++) {
       const gray = imgData.data[i];
       hist[gray]++;
     }
     return hist;
   }
 
-  function throttle(fn, delay) {
-    let last = 0;
-    return function (...args) {
-      const now = new Date().getTime();
-      if (now - last < delay) {
-        return;
-      }
-      last = now;
-      return fn(...args);
-    };
-  }
-
   async function drawImg() {
     if (files) {
       const reader = new FileReader();
-
-      const readAsDataURL = (file) =>
+      const readAsDataURL = (file: File) =>
         new Promise((resolve, reject) => {
           reader.onload = resolve;
           reader.onerror = reject;
@@ -66,6 +72,7 @@
         await new Promise((resolve, reject) => {
           img.onload = resolve;
           img.onerror = reject;
+          // @ts-ignore
           img.src = reader.result;
         });
 
@@ -78,7 +85,7 @@
     }
   }
 
-  async function drawBox(x, y, width, height) {
+  async function drawBox(x: number, y: number, width: number, height: number) {
     if (!ctx) return;
     await drawImg();
     ctx.strokeStyle = "red";
@@ -86,31 +93,82 @@
     ctx.strokeRect(x, y, width, height);
   }
 
-  const throttledDrawBox = throttle(drawBox, 200);
-
-  function calculateMean(imgData) {
-    let sum = 0;
-    for (let i = 0; i < imgData.data.length; i += 4) {
-      sum += imgData.data[i];
-    }
-    return sum / (imgData.data.length / 4);
-  }
-
-  function calculateSigma2(imgData, m) {
-    let sum = 0;
-    for (let i = 0; i < imgData.data.length; i += 4) {
-      sum += Math.pow(imgData.data[i] - m, 2);
-    }
-    return sum / (imgData.data.length / 4);
-  }
-
   async function showHist() {
     await drawImg();
-    const imgData = ctx.getImageData(x, y, width, height);
+    const imgData = toSingleChannel(ctx.getImageData(x, y, width, height));
     m = calculateMean(imgData);
     sigma2 = calculateSigma2(imgData, m);
     histData = histogram(imgData);
     drawBox(x, y, width, height);
+  }
+
+  function enhanceImage(
+    origImage: SingleChannelImageData,
+    neighborhood: number
+  ) {
+    /** 全局均值 */
+    const m_G = calculateMean(origImage);
+    /** 全局标准差 */
+    const sigma_G = Math.sqrt(calculateSigma2(origImage, m));
+
+    /** 局部均值和方差 */
+    const { ms, sigmas } = localHistogram(origImage, neighborhood); // 以 3x3 邻域计算局部均值和方差
+
+    const enhanced = new Uint8ClampedArray(origImage.data); // 复制原图像数据
+    const k0mg = k0 * m_G;
+    const k1sigmaG = k1 * sigma_G;
+    const k2sigmaG = k2 * sigma_G;
+    for (let idx = 0; idx < origImage.length; idx++) {
+      const m_S = ms[idx];
+      const sigma_S = sigmas[idx];
+      if (
+        m_S <= k0 * m_G &&
+        k1 * sigma_G <= sigma_S &&
+        sigma_S <= k2 * sigma_G
+      ) {
+        let px = Math.round(E * origImage.data[idx]);
+        if (px < 0) {
+          // console.error("px out of range", px);
+          px = 0;
+        } else if (px > 255) {
+          // console.error("px out of range", px);
+          px = 255;
+        }
+        enhanced[idx] = px; // 更新增强后的像素值
+      }
+    }
+    const enhancedImageData = toRGBA({
+      data: enhanced,
+      width: origImage.width,
+      height: origImage.height,
+      length: enhanced.length,
+    });
+    canvasEnhanced.width = origImage.width;
+    canvasEnhanced.height = origImage.height;
+    const ctx = canvasEnhanced.getContext("2d");
+    ctx.putImageData(enhancedImageData, 0, 0);
+  }
+
+  function getSingleChannelData() {
+    return toSingleChannel(ctx.getImageData(x, y, width, height));
+  }
+
+  const [throttledDrawBox] = throttle(drawBox, 200);
+  const [throttledShowHist] = throttle(showHist, 300);
+  const [throttledEnhanceImage] = throttle(enhanceImage, 400);
+
+  function downloadEnhanced(_: any) {
+    // Ensure the canvas is not empty
+    if (!canvasEnhanced) return;
+
+    // Create a data URL for the canvas
+    const imageUrl = canvasEnhanced.toDataURL("image/png");
+
+    // Create a temporary link element
+    const link = document.createElement("a");
+    link.download = `${files[0].name}-E ${E}-K0 ${k0}-K1 ${k1}-K2 ${k2}.png`;
+    link.href = imageUrl;
+    link.click(); // Trigger the download
   }
 </script>
 
@@ -129,11 +187,33 @@
     </p>
     <div class="form">
       直方图统计
-      <label>x <input type="number" id="x" bind:value={x} /></label>
-      <label>y <input type="number" id="y" bind:value={y} /></label>
+      <label
+        >x <input
+          type="number"
+          id="x"
+          bind:value={x}
+          max={canvas?.width - 1}
+          min="0"
+        /></label
+      >
+      <label
+        >y <input
+          type="number"
+          id="y"
+          bind:value={y}
+          max={canvas?.height - 1}
+          min="0"
+        /></label
+      >
       <div>
         <label
-          >宽度 <input type="number" id="width" bind:value={width} />
+          >宽度 <input
+            type="number"
+            id="width"
+            bind:value={width}
+            max={canvas?.width - x}
+            min="1"
+          />
           <button
             {disabled}
             on:click={() => {
@@ -146,7 +226,13 @@
       </div>
       <div>
         <label
-          >高度 <input type="number" id="height" bind:value={height} />
+          >高度 <input
+            type="number"
+            id="height"
+            bind:value={height}
+            max={canvas?.height - y}
+            min="1"
+          />
           <button
             {disabled}
             on:click={() => {
@@ -161,24 +247,70 @@
     </div>
     <canvas id="img" bind:this={canvas}></canvas>
   </div>
-  <div>
-    {#if histData && histData.length > 0}
+  {#if histData && histData.length > 0}
+    <div>
       <h2>直方图</h2>
       <Hist data={histData} {width} {height}></Hist>
-      <h2>均值</h2>
+      <h2>全局均值</h2>
       <Katex displayMode
-        >{`m = \\dfrac{1}{${width} \\times ${height}} \\sum^{${width - 1}}_{x=0} \\sum^{${height - 1}}_{y=0} f(x, y)
+        >{`m_\\text G = \\dfrac{1}{${width} \\times ${height}} \\sum^{${width - 1}}_{x=0} \\sum^{${height - 1}}_{y=0} f(x, y)
       \\ \\approx ${Math.round(m)}
       `}</Katex
       >
-      <h2>方差</h2>
+      <h2>全局方差</h2>
       <Katex displayMode
-        >{`\\sigma^2 = \\dfrac{1}{${width} \\times ${height}} \\sum^{${width - 1}}_{x=0} \\sum^{${height - 1}}_{y=0} (f(x, y) - m)^2
+        >{`\\sigma^2_\\text G = \\dfrac{1}{${width} \\times ${height}} \\sum^{${width - 1}}_{x=0} \\sum^{${height - 1}}_{y=0} (f(x, y) - m)^2
       \\ \\approx ${Math.round(sigma2)}
       `}</Katex
       >
-    {/if}
-  </div>
+    </div>
+    <div id="enhance">
+      <h2>增强图像</h2>
+      <div>
+        <label>
+          邻域大小 <input
+            type="number"
+            bind:value={neighborhoodSize}
+            step="2"
+            min="1"
+            max="45"
+            on:change={() => {
+              if (neighborhoodSize % 2 === 0) {
+                neighborhoodSize += 1;
+              }
+            }}
+          />
+          ×
+          <input type="number" bind:value={neighborhoodSize} />
+        </label>
+        <label>
+          <Katex>E</Katex> <input type="number" bind:value={E} step={0.1} />
+        </label>
+        <label>
+          <Katex>k_0</Katex>
+          <input type="number" bind:value={k0} min={0} max={1} step={0.02} />
+        </label>
+        <label>
+          <Katex>k_1</Katex>
+          <input type="number" bind:value={k1} step={0.002} />
+        </label>
+        <label>
+          <Katex>k_2</Katex> <input type="number" bind:value={k2} step={0.02} />
+        </label>
+        <button
+          on:click={() => {
+            enhanceImage(getSingleChannelData(), neighborhoodSize);
+          }}>增强图像</button
+        >
+      </div>
+      <canvas bind:this={canvasEnhanced} width="0" height="0"></canvas>
+      <div class="download">
+        {#if canvasEnhanced?.width}
+          <button on:click={downloadEnhanced}> 下载 PNG 图片 </button>
+        {/if}
+      </div>
+    </div>
+  {/if}
 </main>
 
 <style>
@@ -205,6 +337,13 @@
     font-weight: 100;
   }
 
+  input[type="number"] {
+    width: 9ch;
+  }
+
+  #enhance {
+    min-width: 300px;
+  }
   @media (min-width: 640px) {
     main {
       max-width: none;
