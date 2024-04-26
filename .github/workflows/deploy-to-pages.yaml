@@ -1,0 +1,47 @@
+name: Build and Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "latest"
+
+      - name: Install Dependencies
+        run: |
+          cd expt01
+          pnpm install
+
+      - name: Build Project
+        run: |
+          cd expt01
+          pnpm build
+
+      # create a folder build outside the expt01 folder
+      - name: Create build folder
+        run: |
+          mkdir build
+          mkdir build/expt01
+          cp -r expt01/public/* build/expt01/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build
