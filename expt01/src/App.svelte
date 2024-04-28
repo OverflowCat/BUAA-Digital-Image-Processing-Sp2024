@@ -1,6 +1,11 @@
 <script lang="ts">
   import { throttle } from "@martinstark/throttle-ts";
-  import { calculateMean, calculateSigma2, localHistogram } from "./histogram";
+  import {
+    calculateMean,
+    calculateSigma2,
+    localHistogram,
+    histogram,
+  } from "./histogram";
   import Katex from "svelte-katex";
   import Hist from "./Hist.svelte";
   import { toRGBA, toSingleChannel } from "./imageUtils";
@@ -15,13 +20,14 @@
   let width = 100;
   let height = 100;
   let histData = [];
+
+  let showEnhanced = false;
   let neighborhoodSize = 3;
   /** 教材中推荐的参数 */
   let E = 4.0,
     k0 = 0.4,
     k1 = 0.02,
     k2 = 0.4;
-
   $: ctx = canvas?.getContext("2d");
   $: disabled = !files || files.length === 0;
   $: x,
@@ -30,13 +36,18 @@
     height,
     throttledDrawBox(x, y, width, height),
     histData && histData.length > 0 && throttledShowHist();
+  $: showEnhanced = canvasEnhanced?.width && neighborhoodSize % 2 === 1;
   $: neighborhoodSize,
     E,
     k0,
     k1,
     k2,
-    canvasEnhanced?.width &&
-      neighborhoodSize % 2 === 1 &&
+    files,
+    x,
+    y,
+    width,
+    height,
+    showEnhanced &&
       throttledEnhanceImage(getSingleChannelData(), neighborhoodSize);
 
   async function onFileChange() {
@@ -45,14 +56,6 @@
     y = 0;
     width = canvas.width / 2;
     height = canvas.height / 2;
-  }
-  function histogram(imgData: SingleChannelImageData): number[] {
-    const hist = new Array(256).fill(0);
-    for (let i = 0; i < imgData.data.length; i++) {
-      const gray = imgData.data[i];
-      hist[gray]++;
-    }
-    return hist;
   }
 
   async function drawImg() {
@@ -112,7 +115,7 @@
     const sigma_G = Math.sqrt(calculateSigma2(origImage, m));
 
     /** 局部均值和方差 */
-    const { ms, sigmas } = localHistogram(origImage, neighborhood); // 以 3x3 邻域计算局部均值和方差
+    const { ms, sigmas } = localHistogram(origImage, neighborhood);
 
     const enhanced = new Uint8ClampedArray(origImage.data); // 复制原图像数据
     const k0mg = k0 * m_G;
@@ -274,11 +277,6 @@
             step="2"
             min="1"
             max="45"
-            on:change={() => {
-              if (neighborhoodSize % 2 === 0) {
-                neighborhoodSize += 1;
-              }
-            }}
           />
           ×
           <input type="number" bind:value={neighborhoodSize} />
@@ -334,7 +332,7 @@
     color: #ff3e00;
     text-transform: uppercase;
     font-size: 4em;
-    font-weight: 100;
+    font-weight: 700;
   }
 
   input[type="number"] {
