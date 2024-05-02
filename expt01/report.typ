@@ -1,6 +1,11 @@
-#set page(margin: 1.5cm)
-#set text(font:("STIX Two Text", "Noto Serif CJK SC"), size:1.08em, lang: "zh", cjk-latin-spacing: auto)
-// #set page(paper: "iso-b5", numbering: "1")
+#set page(margin: 1.6cm, numbering: "1")
+#set text(font:("STIX Two Text", "Noto Serif CJK SC"), size:1.07em, lang: "zh", cjk-latin-spacing: auto)
+
+#set par(leading: 0.9em, justify: true)
+#set heading(bookmarked: true)
+#show heading: set text(size: 1.1em)
+
+// #set page(paper: "iso-b5")
 #import "blockcode.typ": bc
 
 #let em = (body) => {
@@ -12,15 +17,35 @@
 
 == 实验目的
 
-+ #em[完成图像统计算法]：计算图像的直方图、均值和方差；
+#figure(caption: "给定的原始图像")[
+  #image("images/Fig0327(a)(tungsten_original).png", width: 25%)
+]
+
++ #em[完成图像统计算法]：计算给定图像的直方图、均值和方差；
 + #em[实现图像增强算法]：根据教材提供的方案，完成选择性局部图像增强功能；
 + #em[探究参数选择方法]：通过实验分析增强关键参数对图像质量的影响规律，寻找合适的参数．
 
 == 实验准备
 
+== 代码使用方法
+
+=== 使用编译后的
+
+#figure(caption: "UI 使用示例")[
+  #image("images/ui.png")
+]
+
+=== 开发环境配置
+
+```sh
+npm i -g pnpm
+pnpm i
+pnpm dev
+```
+
 === 开发环境介绍
 
-为了方便查看效果，我采用了 Web 相关技术进行开发，编译后可以运行在任意操作系统的浏览器环境中。可以方便地选择本地的任意图片（仅限 `png` 和 `jpg` 格式），可以通过 UI 调整各个参数并实时查看结果。
+为了方便查看效果，我采用了 Web 相关技术进行开发，编译后可以运行在任意操作系统的浏览器环境中．可以方便地选择本地的任意图片（仅限 `png` 和 `jpg` 格式），可以通过 UI 调整各个参数并实时查看结果．
 
 同时，由于没有使用相关的图像处理库，所以在自行实现的过程中能够深入了解底层原理．
 
@@ -87,6 +112,20 @@ function histogram(imgData: SingleChannelImageData): number[] {
   ```
 ]
 
+==== 显示直方图
+
+为显示直方图，采用了#link("https://echarts.apache.org/zh/index.html")[Apache ECharts]，是最初由百度开发的一个基于 JavaScript 的开源可视化图表库．我们只需传入 $x$ 轴（0 ～ 255的一个递增数组）和 $y$ 轴（```ts data``` 或 ```ts normalizedDate```）两部分数据，后者需要设置 ```ts type: "bar"``` 指定为直方图．点击右上角的下载图标可以保存图片到本地．
+
+#figure(caption: [直方图])[
+  #image("images/直方图.png", width: 90%),
+]
+
+将所有灰度的分量除以 $M times N$，即可得到归一化的直方图：
+
+#figure(caption: [规一化的直方图])[
+  #image("images/规一化的直方图.png", width: 90%),
+]
+
 === 计算全局均值
 
 首先初始化一个累加变量 `sum` 为 0．然后，遍历图像数据中的每个像素，将其灰度值累加到 `sum` 中．最后，将 `sum` 除以图像数据长度，得到图像的全局均值并返回．
@@ -125,16 +164,122 @@ function calculateSigma2(imgData: SingleChannelImageData, m: number) {
 
 $ m_S_(x y) = sum^(L-1)_(i=0) r_i p_S_(x y) (r_i) $
 
-$ sigma_S_(x y) = sum^(L-1)_(i=0) $
+$ sigma_S_(x y) = sum^(L-1)_(i=0) (r_i - m_S_(x y))^2 p_S_(x y)(r_i) $
 
-
-对于 $x=0,1,2,dots.c,M-1,quad y=0,1,2,dots.c,N-1$，有
+对于 $x=0,1,2,dots.c,M-1,quad y=0,1,2,dots.c,N-1$，有 $m_S_(x y)$ 和 $sigma_S_(x y)$．
 
 == 选择性局部图像增强
 
 === 计算局部直方图
 
+计算局部直方图的算法与全局直方图类似，只是对于只是对于每个像素，都需取邻域（一个子图像）进行计算．我们可以这样设置，来查看一个 $5 times 5$ 子图像的直方图．
 
+要计算一个局部直方图，为了性能考虑，我们不应复制一份子图像出来，而是根据坐标遍历局部．先封装一个计算给定的子图像的直方图的函数．我们在函数输入中用 $x$ 和 $y$ 表示子图像的左上角坐标（包含），$x_"end"$ 和 $y_"end"$ 表示右下角坐标（包含）．
+
+#bc(filename: "src/histogram.ts")[
+  ```ts
+/**
+ * 计算图像的局部直方图
+ * @param imgData 单通道图像数据
+ * @param x 邻域左上角 x 坐标
+ * @param y 邻域左上角 y 坐标
+ * @param x_end 邻域右下角 x 坐标
+ * @param y_end 邻域右下角 y 坐标
+ * @returns 邻域内的直方图，长度为 256
+ */
+function localHistogram(
+  imgData: SingleChannelImageData,
+  x: number,
+  y: number,
+  x_end: number,
+  y_end: number
+): number[] {
+  const hist = new Uint8Array(256).fill(0);
+  
+  // 如果超出图像边界，将其限制在图像边界内
+  const y_start = Math.max(y, 0); 
+  y_end = Math.min(y_end, imgData.height - 1); 
+  const x_start = Math.max(x, 0);
+  x_end = Math.min(x_end, imgData.width - 1);
+
+  /** 局部区域面积，在边界处会小于邻域面积 */
+  const area = (y_end - y_start + 1) * (x_end - x_start + 1);
+
+  for (let j = y_start; j <= y_end; j++) {
+    const base = j * imgData.width;
+    for (let i = x_start; i <= x_end; i++) {
+      // 由于图像数据是一维数组，我们需要将二维坐标转换为一维坐标
+      const idx = base + i;
+      // 取灰度值作为索引
+      const gray = imgData.data[idx];
+      hist[gray]++;
+    }
+  }
+  // 将 Uint8Array 转换为浮点数数组再对每个值除以面积，否则精度会丢失
+  return Array.from(hist).map((x) => x / area);
+}
+  ```
+]
+
+书中并没有提到在边界处对邻域的处理．原先的计算方法是将未归一化的直方图除以邻域的大小的平方，但这样会在边界处出现全黑边框．
+
+#bc(filename: "src/histogram.ts", type: "wrong")[
+  ```ts
+const area = neighborhood * neighborhood;
+```
+]
+
+正确的计算方法是计算邻域的面积，即 $(y_"end" - y_"start" + 1) times (x_"end" - x_"start" + 1)$，其中 $x, y, x_"end", y_"end"$ 都应限制在图像边界内．
+
+/*
+#figure(caption: [错误（左）和正确（右）的计算方法结果])[
+  #stack(
+    dir: ltr, spacing: 2mm,
+    image("images/Fig0327(a)(tungsten_original).png-E 4-K0 0.37-K1 0.02-K2 0.4 N7.png", width: 12em),
+    image("images/correct-neighbor.png", width: 12em),
+  )
+  ]
+]
+*/
+
+=== 计算局部均值和方差
+
+计算局部直方图的目的是计算局部均值和方差．
+
+我们将每个像素邻域的均值和方差分别储存在两个数组中返回．
+
+#bc(filename: "src/histogram.ts")[
+```ts
+function calcLocal(imgData: SingleChannelImageData, neighborhood: number) {
+  if (neighborhood % 2 === 0) throw new Error("邻域必须为奇数");
+  /** 邻域半径，例如 3x3 邻域半径为 1 */
+  const half = Math.floor(neighborhood / 2);
+  /** 存储每个像素根据邻域计算的均值 */
+  console.log(imgData.length);
+  const ms = new Array(imgData.length).fill(0);
+  /** 存储每个像素根据邻域计算的标准差 */
+  const sigmas = new Array(imgData.length).fill(0);
+  for (let j = 0; j < imgData.height; j++) {
+    for (let i = 0; i < imgData.width; i++) {
+      /** p 是邻域 $S_(x y)$ 的未规一化直方图，需要除以面积得到规一化直方图 */
+      const p = localHistogram(imgData, i - half, j - half, i + half, j + half);
+      let m = 0;
+      let sigma2 = 0;
+      for (let r = 0; r < 256; r++) {
+        m += r * p[r];
+      }
+      for (let r = 0; r < 256; r++) {
+        sigma2 += Math.pow(r - m, 2) * p[r];
+      }
+      const idx = j * imgData.width + i;
+      ms[idx] = m;
+      sigmas[idx] = Math.sqrt(sigma2);
+    }
+  }
+  return { ms, sigmas };
+}
+```
+  ]
 
 === 逐像素处理
 
@@ -171,8 +316,47 @@ function enhanceImage(origImage: SingleChannelImageData, neighborhood: number) {
 }
 ```]
 
-=== 增强关键参数选择方法
+== 增强关键参数选择
 
-/ $E$: 增大 $E$ 会增强图像整体对比度，但可能导致细节丢失和噪声放大．实验中，图片增强效果最好的是 $E=5.1$．
-/ $K_0, K_1, K_2$: 调整阈值参数可以控制增强区域的选择性，从而突出特定特征．
-/ $S_(x y)$: 增大局部区域大小可以平滑图像，但可能导致边缘模糊．
+/ $E$: 增大 $E$ 会增强图像整体对比度，但可能导致细节丢失和噪声放大．$E=3$ 时，增强区域的对比度偏小，而 $E=5$ 时，我们可以明显看出黑色和白色的噪点．增强效果最好的是 $E=4$．
+
+#figure(
+    stack(
+        dir: ltr,       // left-to-right
+        spacing: 2mm,   // space between contents
+       image("images/Fig0327(a)(tungsten_original).png-E 3-K0 0.4-K1 0.02-K2 0.4.png", width: 25%),
+       image("images/Fig0327(a)(tungsten_original).png-E 4-K0 0.4-K1 0.02-K2 0.4.png", width: 25%),
+       image("images/Fig0327(a)(tungsten_original).png-E 5-K0 0.4-K1 0.02-K2 0.4.png", width: 25%),
+    ),
+    caption: [从左至右 $E = 3$，$E = 4$，$E = 5$ 时的增强效果]
+)
+// / $K_0, K_1, K_2$: 调整阈值参数可以控制增强区域的选择性，从而突出特定特征．
+/ $K_0$: 调整阈值参数可以控制增强区域的选择性，从而突出特定特征．
+/ $K_1$: 调整阈值参数可以控制增强区域的选择性，从而突出特定特征．
+/ $K_2$: 调整阈值参数可以控制增强区域的选择性，从而突出特定特征．
+
+
+#figure(
+    stack(
+        dir: ltr,       // left-to-right
+        spacing: 2mm,   // space between contents
+       image("images/Fig0327(a)(tungsten_original).png-E 4-K0 0.4-K1 0.02-K2 0.4.png", width: 25%),
+       image("images/Fig0327(a)(tungsten_original).png-E 4-K0 0.4-K1 0.02-K2 0.2.png", width: 25%),
+       image("images/Fig0327(a)(tungsten_original).png-E 4-K0 0.4-K1 0.02-K2 0.1.png", width: 25%),
+       image("images/Fig0327(a)(tungsten_original).png-E 4-K0 0.4-K1 0.02-K2 0.05.png", width: 25%),
+    ),
+    caption: [从左至右 $K_2 = 0.4$，$K_2 = 0.2$，$K_2 = 0.1$，$K_2 = 0.05$ 时的增强效果]
+)
+
+/ $S_(x y)$: 增大局部区域大小可以平滑图像，但可能导致边缘模糊，并且在对比度较大的边缘处出现伪影．
+
+#figure(
+    stack(
+        dir: ltr,       // left-to-right
+        spacing: 2mm,   // space between contents
+       image("images/Fig0327(a)(tungsten_original).png-E 4-K0 0.37-K1 0.02-K2 0.4 N3.png", width: 25%),
+       image("images/Fig0327(a)(tungsten_original).png-E 4-K0 0.37-K1 0.02-K2 0.4 N5.png", width: 25%),
+       // image("images/Fig0327(a)(tungsten_original).png-E 4-K0 0.37-K1 0.02-K2 0.4 N7.png", width: 25%),
+    ),
+    caption: [从左至右邻域大小为 $3$，$5$，$7$ px 时的增强效果]
+)

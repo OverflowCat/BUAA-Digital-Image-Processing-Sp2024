@@ -1,10 +1,10 @@
 <script lang="ts">
   import { throttle } from "@martinstark/throttle-ts";
   import {
+    histogram,
     calculateMean,
     calculateSigma2,
-    localHistogram,
-    histogram,
+    calcLocal,
   } from "./histogram";
   import Katex from "svelte-katex";
   import Hist from "./Hist.svelte";
@@ -115,7 +115,7 @@
     const sigma_G = Math.sqrt(calculateSigma2(origImage, m));
 
     /** 局部均值和方差 */
-    const { ms, sigmas } = localHistogram(origImage, neighborhood);
+    const { ms, sigmas } = calcLocal(origImage, neighborhood);
 
     const enhanced = new Uint8ClampedArray(origImage.data); // 复制原图像数据
     const k0mg = k0 * m_G;
