@@ -1,9 +1,18 @@
+export function histogram(imgData: SingleChannelImageData): number[] {
+  const hist = new Array(256).fill(0);
+  for (let i = 0; i < imgData.data.length; i++) {
+    const gray = imgData.data[i];
+    hist[gray]++;
+  }
+  return hist;
+}
+
 export function calculateMean(imgData: SingleChannelImageData) {
   let sum = 0;
-  for (let i = 0; i < imgData.data.length; i++) {
+  for (let i = 0; i < imgData.length; i++) {
     sum += imgData.data[i];
   }
-  return sum / imgData.data.length;
+  return sum / imgData.length;
 }
 
 export function calculateSigma2(imgData: SingleChannelImageData, m: number) {
@@ -11,8 +20,9 @@ export function calculateSigma2(imgData: SingleChannelImageData, m: number) {
   for (let i = 0; i < imgData.length; i++) {
     sum += Math.pow(imgData.data[i] - m, 2);
   }
-  return sum / imgData.data.length;
+  return sum / imgData.length;
 }
+
 export function localHistogram(
   imgData: SingleChannelImageData,
   neighborhood: number

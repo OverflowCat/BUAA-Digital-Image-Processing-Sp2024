@@ -23,6 +23,7 @@ export function toSingleChannel(imgData: ImageData): SingleChannelImageData {
 export function toRGBA(imageData: SingleChannelImageData): ImageData {
   const rgba = new Uint8ClampedArray(imageData.length * 4);
   for (let i = 0; i < imageData.length; i++) {
+    // rgba.set([imageData.data[i], imageData.data[i], imageData.data[i], 255], i * 4);
     rgba[i * 4] = imageData.data[i];
     rgba[i * 4 + 1] = imageData.data[i];
     rgba[i * 4 + 2] = imageData.data[i];

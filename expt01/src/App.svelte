@@ -46,14 +46,6 @@
     width = canvas.width / 2;
     height = canvas.height / 2;
   }
-  function histogram(imgData: SingleChannelImageData): number[] {
-    const hist = new Array(256).fill(0);
-    for (let i = 0; i < imgData.data.length; i++) {
-      const gray = imgData.data[i];
-      hist[gray]++;
-    }
-    return hist;
-  }
 
   async function drawImg() {
     if (files) {
