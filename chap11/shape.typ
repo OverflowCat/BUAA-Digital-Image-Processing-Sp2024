@@ -46,7 +46,7 @@
   let colored(x) = text(fill: purple, $#x$)
   content((1, 2.2), colored($0$))
   content((2, 2.2), colored($0$))
-  content((3, 2.2), colored($0$))
+  content((3, 2.2), colored($3$))
   content((3.15, 1), colored($0$))
   content((3.15, 0), colored($3$))
   content((2-.15, 0), colored($3$))

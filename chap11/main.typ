@@ -1,5 +1,5 @@
 #set text(lang: "zh", cjk-latin-spacing: auto, font: "Noto Serif CJK SC")
-#set page("a5", margin: 1.4cm)
+#set page("iso-b5")
 
 + 教材P554页，第11.1题
   + 重新定义链码的一个起始点，以便所得的数字序列形成一个最小值整数。请证明该编码与边界上的初始起点无关。
@@ -18,10 +18,29 @@
 
   #figure(caption: "形状")[#include "shape.typ"]<shape>
 
+  #import "chain.typ": calcChain, calcShape, lShift
+
+  #let chain = "000332123211"
+  #let (res, first) = calcChain(chain)
+  #let chain- = "300303311330"
+  #assert(str(first) + res == chain-)
+  #let shape-no = calcShape(chain-)
+  // - 链码：$chain$
+  // - 一阶差分：$#chain-$
+  // - 形状数：$#shape-no$
+  // - 形状数的阶：$#shape-no.len()$
+  // #show table: it => align(center, it)
+  #figure(caption: "答案")[
+  #table(
+    columns: (auto, auto),
+    align: right,
+    [链码], $chain$,
+    [一阶差分], $#chain-$,
+    [形状数], $#shape-no$,
+    [形状数的阶], $#shape-no.len()$
+  )
+  ]
+
 + 一家使用瓶子盛装各种工业化学品的公司在听说您成功地解决了图像处理问题后，雇用您来设计一种检测瓶子未装满的方法。瓶子在传送带上移动并通过自动装填和封盖机时的情形如下图所示。当液位低于瓶颈底部和瓶子肩部的中间点时，则认为瓶子未装满。瓶子横断面的侧面与倾斜面的区域定义为瓶子的肩部。瓶子在不断移动，但该公司有一个成像系统，该系统装备了一个前端照明闪光灯，可有效地停止瓶子的移动，所以您可以得到非常接近于这里显示的样例图像。基于上述资料，请您提出一个检测未完全装满的瓶子的解决方案。清楚地陈述您所做的那些可能会影响到解决方案的所有假设。
 
-  === 假设
-
-  - 瓶子是水平放置的
-
-  
+  #include "4/answer.typ"
