@@ -28,7 +28,10 @@
 #let chain = "0110233210332322111"
 #let (res, content, first) = calcChain(chain)
 
+#import "util.typ": problem
+#problem[
 计算编码 #chain 的一次差分。
+]
 
 #content
 
