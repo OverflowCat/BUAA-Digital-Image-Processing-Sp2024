@@ -6,6 +6,7 @@
     calculateSigma2,
     calcLocal,
   } from "./histogram";
+  // @ts-ignore
   import Katex from "svelte-katex";
   import Hist from "./Hist.svelte";
   import { toRGBA, toSingleChannel } from "./imageUtils";
@@ -13,22 +14,22 @@
   let files: FileList;
   let canvas: HTMLCanvasElement;
   let canvasEnhanced: HTMLCanvasElement;
-  let x = 0;
-  let y = 0;
   let m = 0;
   let sigma2 = 0;
-  let width = 100;
-  let height = 100;
-  let histData = [];
+  let histData: ReturnType<typeof histogram> = [];
+  let x = 0,
+    y = 0,
+    width = 0,
+    height = 0;
 
-  let showEnhanced = false;
+  let showEnhanced: boolean | number = false;
   let neighborhoodSize = 3;
   /** 教材中推荐的参数 */
   let E = 4.0,
     k0 = 0.4,
     k1 = 0.02,
     k2 = 0.4;
-  $: ctx = canvas?.getContext("2d");
+  $: ctx = canvas?.getContext("2d")!;
   $: disabled = !files || files.length === 0;
   $: x,
     y,
@@ -36,6 +37,8 @@
     height,
     throttledDrawBox(x, y, width, height),
     histData && histData.length > 0 && throttledShowHist();
+  $: isGlobal =
+    x == 0 && y == 0 && width == canvas?.width && height == canvas?.height;
   $: showEnhanced = canvasEnhanced?.width && neighborhoodSize % 2 === 1;
   $: neighborhoodSize,
     E,
@@ -149,7 +152,7 @@
     canvasEnhanced.width = origImage.width;
     canvasEnhanced.height = origImage.height;
     const ctx = canvasEnhanced.getContext("2d");
-    ctx.putImageData(enhancedImageData, 0, 0);
+    ctx!.putImageData(enhancedImageData, 0, 0);
   }
 
   function getSingleChannelData() {
@@ -254,13 +257,17 @@
     <div>
       <h2>直方图</h2>
       <Hist data={histData} {width} {height}></Hist>
-      <h2>全局均值</h2>
+      <h2>
+        {#if isGlobal}全局{/if}均值
+      </h2>
       <Katex displayMode
         >{`m_\\text G = \\dfrac{1}{${width} \\times ${height}} \\sum^{${width - 1}}_{x=0} \\sum^{${height - 1}}_{y=0} f(x, y)
       \\ \\approx ${Math.round(m)}
       `}</Katex
       >
-      <h2>全局方差</h2>
+      <h2>
+        {#if isGlobal}全局{/if}方差
+      </h2>
       <Katex displayMode
         >{`\\sigma^2_\\text G = \\dfrac{1}{${width} \\times ${height}} \\sum^{${width - 1}}_{x=0} \\sum^{${height - 1}}_{y=0} (f(x, y) - m)^2
       \\ \\approx ${Math.round(sigma2)}
