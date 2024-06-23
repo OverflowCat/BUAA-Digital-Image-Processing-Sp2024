@@ -1,5 +1,6 @@
 #import "@preview/unify:0.4.3": num, qty
 #import "@preview/gentle-clues:0.7.0": clue
+#set text(font: "Noto Serif CJK SC")
 
 #let problem(title: "问题", icon: emoji.quest , ..args) = clue(
   accent-color: green,
