@@ -1,7 +1,6 @@
 #let tree(label, ..children) = style(styles => block(align(center, {
   let label = rect(align(center + horizon)[#label])
   let label_dim = measure(label, styles)
-
   let children_widths = children.pos().map(x => measure(x, styles).width)
   let all_children = stack(dir: ltr, spacing: 1em, ..children.pos())
   let all_children_dim = measure(all_children, styles)
