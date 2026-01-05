@@ -1,6 +1,6 @@
 {
   "name": "buaa-digital-image-processing",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "BUAA Digital Image Processing",
   "scripts": {},
   "keywords": ["buaa", "digital-image-processing", "typst"],

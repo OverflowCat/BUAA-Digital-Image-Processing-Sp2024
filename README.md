@@ -19,3 +19,7 @@
 
 - [基础物理实验 II](https://github.com/OverflowCat/BUAA-Phy-Expt-Sp2023)
 - [误差理论与数据处理](https://github.com/OverflowCat/BUAA-Data-and-Error-Analysis-Sp2024)
+
+## 变更记录
+
+- 2026-01-05（v0.0.5 -> v0.1.0）：升级到 typst@0.14.2；加入 `build.sh` 脚本以批量编译所有 typst 文件。

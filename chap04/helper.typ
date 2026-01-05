@@ -1,5 +1,5 @@
 #let problemCounter = counter("q")
-#let Q = (body) => {
+#let Q = (body) => context {
   set text(weight: "semibold")
   problemCounter.step()
 

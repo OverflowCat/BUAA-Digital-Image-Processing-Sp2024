@@ -1,5 +1,5 @@
-#import "@preview/unify:0.4.3": num, qty
-#import "@preview/gentle-clues:0.7.0": clue
+#import "@preview/unify:0.7.0": num, qty
+#import "@preview/gentle-clues:1.2.0": clue
 // #set text(font:("STIX Two Text", "Noto Serif CJK SC"))
 // #set page(paper: "iso-b5", numbering: "1")
 #let problemCounter = counter("mycounter")

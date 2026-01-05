@@ -1,5 +1,5 @@
-#import "@preview/codelst:2.0.1": sourcecode
-#import "@preview/showybox:2.0.1": showybox
+#import "@preview/codelst:2.0.2": sourcecode
+#import "@preview/showybox:2.0.4": showybox
 
 #let bc = (body, filename: "", type: "normal") => {
   let color = {

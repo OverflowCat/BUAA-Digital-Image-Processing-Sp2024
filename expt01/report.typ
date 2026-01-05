@@ -1,7 +1,6 @@
 // #set page(margin: (left: 1.6cm, right: 1.6cm, top: 2.4cm, bottom: 2.4cm), numbering: "1")
 #set text(font:("STIX Two Text", "Noto Serif CJK SC"), size: 1.07em, lang: "zh", cjk-latin-spacing: auto)
-#set par(leading: 0.96em, justify: true)
-#show par: set block(spacing: 1.25em)
+#set par(leading: 0.96em, justify: true, spacing: 1.25em)
 #set heading(bookmarked: true)
 #show heading: set text(size: 1.1em)
 #show figure.caption: set text(font: "Zhuque Fangsong (technical preview)", size: 1.1em, fill: rgb(55, 55, 55))
@@ -19,7 +18,7 @@
 
 = 数字图像处理$quad$实验一
 
-#include "./private.typ"
+// #include "./private.typ"
 
 #stack(dir: rtl, spacing: 2em,
 [

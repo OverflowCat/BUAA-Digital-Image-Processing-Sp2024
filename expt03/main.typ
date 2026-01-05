@@ -11,6 +11,7 @@
 #strong[《数字图像处理》（课程代码：B3I173330）]
 = 数字图像处理  实验3  实验报告
 
+/*
 #align(center)[#table(
   columns: 3,
   align: (col, row) => (auto,auto,auto,).at(col),
@@ -24,6 +25,7 @@
   h(7em),
 )
 ]
+*/
 
 == 实验目的
 #figure(
