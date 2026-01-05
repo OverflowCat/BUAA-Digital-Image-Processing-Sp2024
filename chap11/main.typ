@@ -8,7 +8,7 @@
 #show "。": "．"
 #show heading: set text(font: "Noto Sans CJK SC", size: 1.15em)
 
-= 数字图像处理  第11章 形状表示与描述 作业
+= 第 11 章 形状表示与描述
 
 // #show math.equation: set text(font: "Fira Math")
 #set enum(numbering: "1.a.1.")

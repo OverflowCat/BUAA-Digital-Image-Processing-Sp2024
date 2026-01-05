@@ -6,7 +6,7 @@
 #show "。": "．"
 // #show heading: set text(font: "Noto Sans CJK SC", size: 1.15em)
 
-= 数字图像处理 第10章 形状表示与描述 作业
+= 第10章 形状表示与描述
 
 == 1
 
