@@ -1,9 +1,9 @@
-#set text(lang: "zh", cjk-latin-spacing: auto, font: "Noto Serif CJK SC")
+// #set text(lang: "zh", cjk-latin-spacing: auto, font: "Noto Serif CJK SC")
 #set page(numbering: "1", margin: (left: 1.4cm, right: 1.9cm))
 #show figure.caption: set text(font: "Zhuque Fangsong (technical preview)")
 #show "。": "．"
 
-= 第九章作业
+// = 第九章作业
 
 1. 较小的方块在腐蚀后完全消失，而较大的方块超过了结构元大小这一阈值，并且和结构元形状一致，没有被完全腐蚀，所以能够保留下来。
 

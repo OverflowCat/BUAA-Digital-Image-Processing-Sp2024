@@ -1,13 +1,13 @@
 #set text(lang: "zh", cjk-latin-spacing: auto, font: "Noto Serif CJK SC")
-#set page(numbering: "1", margin: (left: 1.4cm, right: 1.9cm))
+// #set page(numbering: "1", margin: (left: 1.4cm, right: 1.9cm))
 #show figure.caption: set text(font: "Zhuque Fangsong (technical preview)")
 #show "。": "．"
 #show heading: set text(font: "Noto Sans CJK SC", size: 1.15em)
 #import "helper.typ": *
 
-= 数字图像处理#h(1em)第4章#h(1em)频率域滤波#h(1em)作业
+// = 数字图像处理#h(1em)第4章#h(1em)频率域滤波#h(1em)作业
 
-#v(1em)
+// #v(1em)
 
 #Q[完成由式（4.3-11）和式（4.3-12）给出的步骤。（教材P192页，第4.6题。）]
 

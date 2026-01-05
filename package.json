@@ -1,0 +1,13 @@
+{
+  "name": "buaa-digital-image-processing",
+  "version": "0.0.3",
+  "description": "BUAA Digital Image Processing",
+  "scripts": {},
+  "keywords": ["buaa", "digital-image-processing", "typst"],
+  "author": {
+    "name": "OverflowCat",
+    "url": "https://about.overflow.cat/"
+  },
+  "license": "CC BY-SA 4.0",
+  "packageManager": "pnpm@10.11.0"
+}

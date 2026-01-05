@@ -1,7 +1,7 @@
 #import "chain.typ": calcChain, calcShape, lShift
 #import "util.typ": problem
 #set text(lang: "zh", cjk-latin-spacing: auto, font: "Noto Serif CJK SC")
-#set page("iso-b5", numbering: "1", margin: (left: 1.4cm, right: 1.9cm))
+// #set page("iso-b5", numbering: "1", margin: (left: 1.4cm, right: 1.9cm))
 #set par(leading: 1.1em)
 #show table: set text(font: "Zhuque Fangsong (technical preview)")
 #show figure.caption: set text(font: "Zhuque Fangsong (technical preview)")

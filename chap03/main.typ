@@ -1,7 +1,7 @@
 #import "@preview/unify:0.4.3": num, qty
 #import "@preview/gentle-clues:0.7.0": clue
-#set text(font:("STIX Two Text", "Noto Serif CJK SC"))
-#set page(paper: "iso-b5", numbering: "1")
+// #set text(font:("STIX Two Text", "Noto Serif CJK SC"))
+// #set page(paper: "iso-b5", numbering: "1")
 #let problemCounter = counter("mycounter")
 
 #let problem(icon: emoji.quest , ..args) = clue(
@@ -20,9 +20,6 @@
     #it.body
   ]
 ]
-
-
-= 数字图像处理　第三章作业
 
 #problemCounter.step()
 == 为了展开一幅图像的灰度，使其最低灰度为 $C$、最高灰度为 $L-1$，试给出一个单调的变换函数．
