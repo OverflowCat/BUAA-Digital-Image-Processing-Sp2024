@@ -6,8 +6,12 @@
   "keywords": ["buaa", "digital-image-processing", "typst"],
   "author": {
     "name": "OverflowCat",
-    "url": "https://about.overflow.cat/"
+    "url": "https://blog.xinshijiededa.men/tags/%E6%95%B0%E5%AD%97%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/"
   },
   "license": "CC BY-SA 4.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OverflowCat/BUAA-Digital-Image-Processing-Sp2024/"
+  },
   "packageManager": "pnpm@10.11.0"
 }
